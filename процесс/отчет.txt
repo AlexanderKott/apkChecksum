@@ -1,0 +1,62 @@
+victUm app
+com.kotikov.victimapp
+
+Идея теста:
+Изменил хэш apk тем что добавил лишнюю строку к концу файла.
+
+
+
+ДО вмешательства:
+
+Hash SHA-256: 7102e0da717d4c78d1d422e9c7ee8dd4d3d6ae890865eeb089ab435a9e5d9feb
+
+ПОСЛЕ вмешательства:
+	Актуальный хэш: fc9ad34520d250f6a29e44d813726fabde59bb4e94009ced36ba360bd5a32fb8
+
+	Бизибокс 1.21.1 (доп проверка)
+	https://busybox.net/downloads/binaries/1.21.1/
+	
+	
+	1|generic_x86_64:/ # /data/local/tmp/busybox sha256sum /data/app/com.kotikov.victimapp-1/base.apk                     
+	fc9ad34520d250f6a29e44d813726fabde59bb4e94009ced36ba360bd5a32fb8  /data/app/com.kotikov.victimapp-1/base.apk
+ 
+
+
+Попытка запуска приложения:
+
+79-4379  AndroidRuntime          com.kotikov.victimapp                E  FATAL EXCEPTION: main
+                                                                                                    Process: com.kotikov.victimapp, PID: 4379
+                                                                                                    java.lang.RuntimeException: Unable to get provider androidx.startup.InitializationProvider: android.content.res.Resources$NotFoundException: String resource ID #0x7f090000
+                                                                                                    	at android.app.ActivityThread.installProvider(ActivityThread.java:5814)
+                                                                                                    	at android.app.ActivityThread.installContentProviders(ActivityThread.java:5403)
+                                                                                                    	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:5342)
+                                                                                                    	at android.app.ActivityThread.-wrap2(ActivityThread.java)
+                                                                                                    	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1528)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:102)
+                                                                                                    	at android.os.Looper.loop(Looper.java:154)
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:6077)
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method)
+                                                                                                    	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:866)
+                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:756)
+                                                                                                    Caused by: android.content.res.Resources$NotFoundException: String resource ID #0x7f090000
+                                                                                                    	at android.content.res.Resources.getText(Resources.java:331)
+                                                                                                    	at android.content.res.Resources.getString(Resources.java:377)
+                                                                                                    	at android.content.Context.getString(Context.java:476)
+                                                                                                    	at androidx.startup.AppInitializer.discoverAndInitialize(AppInitializer.java:216)
+                                                                                                    	at androidx.startup.AppInitializer.discoverAndInitialize(AppInitializer.java:206)
+                                                                                                    	at androidx.startup.InitializationProvider.onCreate(InitializationProvider.java:45)
+                                                                                                    	at android.content.ContentProvider.attachInfo(ContentProvider.java:1751)
+                                                                                                    	at android.content.ContentProvider.attachInfo(ContentProvider.java:1726)
+                                                                                                    	at android.app.ActivityThread.installProvider(ActivityThread.java:5811)
+                                                                                                    	at android.app.ActivityThread.installContentProviders(ActivityThread.java:5403) 
+                                                                                                    	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:5342) 
+                                                                                                    	at android.app.ActivityThread.-wrap2(ActivityThread.java) 
+                                                                                                    	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1528) 
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:102) 
+                                                                                                    	at android.os.Looper.loop(Looper.java:154) 
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:6077) 
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method) 
+                                                                                                    	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:866) 
+                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:756) 
+2025-12-07 17:58:55.289  4379-4386  art                     com.kotikov.victimapp                I  Debugger is no longer active
+2025-12-07 17:58:55.289  4379-4386  art                     com.kotikov.victimapp                I  Starting a blocking GC Instrumentation
