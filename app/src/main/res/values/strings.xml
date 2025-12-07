@@ -1,0 +1,92 @@
+<resources>
+    <string name="app_name">TaskApkChecksum</string>
+
+    <string name="main_screen_title">APK Checksum</string>
+    <string name="main_screen_subtitle">Котиков А.И. Тестовое задание</string>
+    <string name="main_screen_info_icon">\?</string>
+
+
+    <string name="filter_target">Цели</string>
+    <string name="filter_all">Все</string>
+    <string name="filter_system">Системные</string>
+    <string name="filter_user">Пользовательские</string>
+    <string name="filter_library">Библиотеки</string>
+    <string name="filter_debug">Без подписи</string>
+
+    <string name="category_label">"кат.:"</string>
+    <string name="category_user">пользовательское</string>
+    <string name="category_library">библ-ка</string>
+    <string name="category_overlay">оверлей</string>
+    <string name="category_system">системное</string>
+    <string name="category_debug">отладка</string>
+
+    <string name="toast_apk_now_in_targets">Приложение добавлено в цели</string>
+    <string name="add_to_target_labels">Добавить в цели</string>
+
+
+    <string name="caption_hash_info">Информация о хэше</string>
+    <string name="label_no_data_stub">нет данных</string>
+    <string name="label_reference_hash">Эталонный хэш:</string>
+    <string name="label_reference_hash_time">Время созд-я эталон-го хэша:</string>
+    <string name="label_actual_hash">Актуальный хэш:</string>
+    <string name="label_actual_hash_time">Время созд-я актуального хэша:</string>
+    <string name="label_extra_one_snapshot_needed">нужен ещё снимок</string>
+    <string name="label_verdict_hashes_different">❌ хэши ОТЛИЧАЮТСЯ</string>
+    <string name="label_verdict_hashes_match">✅ хешы сходятся</string>
+    <string name="label_result">Результат: %1$s</string>
+
+    <string name="caption_apk_details">Детали приложения</string>
+
+    <string name="copied_toast">Скопировано</string>
+
+    <string name="advice_go_back_and_take_snaphot">Вернитесь и сделайте снимок</string>
+    <string name="targets">Целей: %1$s</string>
+    <string name="snapshot">Снимок: \n%1$s</string>
+
+    <string name="error_file_not_found">Файл APK не найден или недоступен.</string>
+    <string name="error_algorithm_not_found">Критическая ошибка: алгоритм хеширования не поддерживается системой.</string>
+    <string name="error_io_exception">Ошибка чтения файла: возможно, файл поврежден.</string>
+    <string name="error_permission_denied">Отказано в доступе к файлу из-за системных ограничений.</string>
+    <string name="error_out_of_memory">Недостаточно памяти для обработки файла.</string>
+    <string name="error_unknown_hash_error">Произошла неизвестная ошибка при вычислении хеша.</string>
+    <string name="error_nameNotFoundException">Пакет не найден</string>
+
+    <string name="about_text"><![CDATA[
+    <br/>
+    <br/>
+      Здравствуйте, команда dr.Web!<br/>
+    <br/>
+        Данное приложение было создано как тестовое задание, после
+         отклика на вакансию андроид-разработчика.
+    <br/>
+    Начало декабря 2025 года.
+    <br/>
+     <br/>
+    <b>Тестовое задание выполнил: Котиков Александр</b><br/>
+    <br/>
+    Данное приложение является детектором изменений в base apk файлах,
+    установленных в системе Android, на основе вычисления SHA-256.
+    <br/>
+    Чтобы вычислить и сравнить хэшы, нужно добавить apk в "Цели", перейдите
+    в любую вкладку, кроме "Цели", и смахните нужное приложение
+    вправо. Оно отобразиться в целях. Далее делайте снимки.
+    И генерите по ним отчеты.
+    <br/>
+     <br/>
+   Пожалуйста, прочитайте readme.pdf перед использованием
+      приложения на моем гитхабе.
+   <br/>
+   <br/>
+   гитхаб: <b>https://github.com/AlexanderKott/</b><br/>
+   тг:  <b>https://t.me/LexCircumflex</b>
+
+<br/>
+<br/>
+    <i>Спасибо</i>
+    <br/>
+    Жду обратную связь &#128526;
+]]></string>
+    <string name="label_test_task">Тестовое задание</string>
+    <string name="label_author">Котиков А.И.</string>
+
+</resources>
