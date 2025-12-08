@@ -29,13 +29,22 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 
+
 //диай сюда
 class WorkAreaViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        private const val REPORT_FILE_NAME = "snapshots_report.html"
+    }
 
+
+    private val filterTrigger: MutableStateFlow<AppsFilter> = MutableStateFlow(AppsFilter.ALL)
+    private val isLoading = MutableStateFlow(false)
     private val _targets = MutableStateFlow<MutableList<StatedTarget>>(
         mutableListOf<StatedTarget>()
     )
     val targets: StateFlow<List<StatedTarget>> = _targets.asStateFlow()
+    private val allApps = MutableSharedFlow<Result<List<FullAppInfo>>>(replay = 1)
+
 
     private val apksRepository = GetAllInstalledAppsRepositoryImpl(
         application
@@ -47,35 +56,12 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
             .applicationContext
     )
 
+    //диай
     private val snapshots = SnapshotsStorageImpl
     private val hasCalculator = HashCalculatorImpl
     private val sysInfo by lazy { GetSystemInfoImpl }
     private val shareFiles by lazy { FileSharer(application) }
 
-
-    private val allApps = MutableSharedFlow<Result<List<FullAppInfo>>>(replay = 1)
-
-    init {
-        refresh()
-    }
-
-    fun refresh() {
-        viewModelScope.launch(Dispatchers.IO) {
-            isLoading.value = true
-            val res = try {
-                val apps = apksRepository.getFullAppList()
-                Result.success(apps)
-            } catch (e: Exception) {
-                Result.failure(e)
-            } finally {
-                isLoading.value = false
-            }
-            allApps.emit(res)
-        }
-    }
-
-    private val filterTrigger: MutableStateFlow<AppsFilter> = MutableStateFlow(AppsFilter.ALL)
-    private val isLoading = MutableStateFlow(false)
 
     val apksList = combine(allApps, filterTrigger, isLoading)
     { allApps, filter, loading ->
@@ -101,6 +87,26 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = UIStatus.Loading
         )
+
+
+    init {
+        refresh()
+    }
+
+    fun refresh() {
+        viewModelScope.launch(Dispatchers.IO) {
+            isLoading.value = true
+            val res = try {
+                val apps = apksRepository.getFullAppList()
+                Result.success(apps)
+            } catch (e: Exception) {
+                Result.failure(e)
+            } finally {
+                isLoading.value = false
+            }
+            allApps.emit(res)
+        }
+    }
 
 
     fun filter(filter: AppsFilter) {
@@ -172,7 +178,7 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
     ): File =
         withContext(Dispatchers.IO) {
             val cacheDir = context.cacheDir
-            val file = File(cacheDir, "snapshots_report.html")
+            val file = File(cacheDir, REPORT_FILE_NAME)
 
             try {
                 file.writeText(reportContent, Charsets.UTF_8)
@@ -184,7 +190,7 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
         }
 
 
-    fun List<FullAppInfo>.filterApps(filter: AppsFilter): List<FullAppInfo> {
+    private fun List<FullAppInfo>.filterApps(filter: AppsFilter): List<FullAppInfo> {
         return when (filter) {
             AppsFilter.USER_ONLY -> filter { !it.isSystemApp && !it.isTechnicalName }
             AppsFilter.ALL -> this
