@@ -1,13 +1,13 @@
 package com.kotikov.technicalTask.forDrWeb
 
-import com.kotikov.technicalTask.forDrWeb.data.HashCalculationException
 import com.kotikov.technicalTask.forDrWeb.data.HashCalculatorImpl
-import com.kotikov.technicalTask.forDrWeb.data.HashCalculatorImpl.ERROR_CODE_FILE_NOT_FOUND
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
+import java.io.FileNotFoundException
 
 
 private val hashCalculator = HashCalculatorImpl
@@ -24,12 +24,12 @@ class SHA_256UnitTest {
             tempFile.writeText(testContent)
             val filePath = tempFile.absolutePath
 
-            val actualHash = hashCalculator.getFileHashSHA_256(filePath)
-            assertEquals(expectedHash, actualHash)
+            val actualHashResult = hashCalculator.getFileHashSHA_256(filePath)
+            val actualValue = actualHashResult.getOrElse {
+                fail()
+            }
 
-        } catch (e: Exception) {
-            e.printStackTrace()
-            fail("Хеш функция бросила исключение: ${e.message}")
+            assertEquals(expectedHash, actualValue)
         } finally {
             if (tempFile.exists()) {
                 tempFile.delete()
@@ -48,12 +48,13 @@ class SHA_256UnitTest {
             tempFile.writeBytes(nullBytes)
             val filePath = tempFile.absolutePath
 
-            val actualHash = hashCalculator.getFileHashSHA_256(filePath)
-            assertEquals(expectedHash, actualHash)
+            val actualHashResult = hashCalculator.getFileHashSHA_256(filePath)
+            val actualValue = actualHashResult.getOrElse {
+                fail()
+            }
 
-        } catch (e: Exception) {
-            e.printStackTrace()
-            fail("Тест с нулевыми байтами провалился: ${e.message}")
+            assertEquals(expectedHash, actualValue)
+
         } finally {
             if (tempFile.exists()) tempFile.delete()
         }
@@ -73,12 +74,13 @@ class SHA_256UnitTest {
             tempFile.writeBytes(pngSignatureBytes)
             val filePath = tempFile.absolutePath
 
-            val actualHash = hashCalculator.getFileHashSHA_256(filePath)
-            assertEquals(expectedHash, actualHash)
+            val actualHashResult = hashCalculator.getFileHashSHA_256(filePath)
+            val actualValue = actualHashResult.getOrElse {
+                fail()
+            }
 
-        } catch (e: Exception) {
-            e.printStackTrace()
-            fail("Тест с бинарными данными провалился: ${e.message}")
+            assertEquals(expectedHash, actualValue)
+
         } finally {
             if (tempFile.exists()) tempFile.delete()
         }
@@ -93,13 +95,16 @@ class SHA_256UnitTest {
         val tempFile = File.createTempFile("hash_empty_test", ".tmp")
         try {
             tempFile.writeBytes(emptyBytes)
-            val actualHash = hashCalculator.getFileHashSHA_256(tempFile.absolutePath)
 
-            assertEquals(expectedHash, actualHash)
+            val filePath = tempFile.absolutePath
 
-        } catch (e: Exception) {
-            e.printStackTrace()
-            fail("Тест пустого файла провалился: ${e.message}")
+            val actualHashResult = hashCalculator.getFileHashSHA_256(filePath)
+            val actualValue = actualHashResult.getOrElse {
+                fail()
+            }
+
+            assertEquals(expectedHash, actualValue)
+
         } finally {
             if (tempFile.exists()) tempFile.delete()
         }
@@ -121,11 +126,19 @@ class SHA_256UnitTest {
             val hashA = hashCalculator.getFileHashSHA_256(tempFileA.absolutePath)
             val hashB = hashCalculator.getFileHashSHA_256(tempFileB.absolutePath)
 
-            assertNotEquals("Хеши должны отличаться для разного содержимого", hashA, hashB)
+            val actualValue1 = hashA.getOrElse {
+                fail()
+            }
 
-        } catch (e: Exception) {
-            e.printStackTrace()
-            fail("Тест сравнения хешей провалился: ${e.message}")
+            val actualValue2 = hashB.getOrElse {
+                fail()
+            }
+
+            assertNotEquals(
+                "Хеши должны отличаться для разного содержимого",
+                actualValue1, actualValue2
+            )
+
         } finally {
             if (tempFileA.exists()) tempFileA.delete()
             if (tempFileB.exists()) tempFileB.delete()
@@ -135,15 +148,9 @@ class SHA_256UnitTest {
     @Test
     fun `тест SHA-256 выбрасывание исключения`() {
         val nonExistentPath = "/non/existent/path/to/apk.apk"
-        try {
-            hashCalculator.getFileHashSHA_256(nonExistentPath)
-            fail("Ожидалось исключение HashCalculationException")
 
-        } catch (e: HashCalculationException) {
-            assertEquals(ERROR_CODE_FILE_NOT_FOUND, e.errorCode)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            fail("Было брошено неправильное исключение: ${e.message}")
+        assertThrows(FileNotFoundException::class.java) {
+            hashCalculator.getFileHashSHA_256(nonExistentPath).getOrThrow()
         }
     }
     //и другие тесты...

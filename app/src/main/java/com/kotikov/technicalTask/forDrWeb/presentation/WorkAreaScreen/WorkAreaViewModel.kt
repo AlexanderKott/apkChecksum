@@ -1,11 +1,10 @@
 package com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen
 
 import android.app.Application
-import android.content.Context
-
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
+import com.kotikov.technicalTask.forDrWeb.R
 import com.kotikov.technicalTask.forDrWeb.data.ApkLookUpImpl
 import com.kotikov.technicalTask.forDrWeb.data.GetAllInstalledAppsRepositoryImpl
 import com.kotikov.technicalTask.forDrWeb.data.GetSystemInfoImpl
@@ -16,6 +15,7 @@ import com.kotikov.technicalTask.forDrWeb.domain.RecordSnapshotUseCase
 import com.kotikov.technicalTask.forDrWeb.domain.reports.generateHtmlReport
 import com.kotikov.technicalTask.forDrWeb.presentation.FileSharer
 import com.kotikov.technicalTask.forDrWeb.presentation.models.AppsFilter
+import com.kotikov.technicalTask.forDrWeb.ui.theme.compose.screens.AppCardScreen.saveReportToInternalStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,11 +26,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.IOException
-import com.kotikov.technicalTask.forDrWeb.R
-import com.kotikov.technicalTask.forDrWeb.ui.theme.compose.screens.AppCardScreen.saveReportToInternalStorage
 
 //диай сюда
 class WorkAreaViewModel(application: Application) : AndroidViewModel(application) {
