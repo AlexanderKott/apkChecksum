@@ -1,6 +1,5 @@
 package com.kotikov.technicalTask.forDrWeb.domain
 
-import com.kotikov.technicalTask.forDrWeb.data.models.APKLookUpResult
 import com.kotikov.technicalTask.forDrWeb.domain.repositories.ApkLookUp
 import com.kotikov.technicalTask.forDrWeb.domain.repositories.GetAllInstalledAppsRepository
 import com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen.StatedTarget
@@ -15,23 +14,29 @@ class MarkApkAsTargetUseCase(
     operator fun invoke(
         packageName: String,
         targets: MutableList<StatedTarget>,
-        onTargetsUpdated: (TreeSet<StatedTarget>) -> Unit,
-    ) {
-        val info = apkLookupRepository.getApkInfo(packageName)
-        val apk = (info as APKLookUpResult.FoundAPKs).baseAPK
-        val lookup = apksRepository.appLookup(packageName)
+    ) : Result<TreeSet<StatedTarget>> {
+        val apkInfo = apkLookupRepository.getApkInfo(packageName)
+        val appLookup = apksRepository.appLookup(packageName)
+
+        val app = apkInfo.getOrElse {
+            return Result.failure(it)
+        }
+
+        val apk = appLookup.getOrElse {
+            return Result.failure(it)
+        }
 
         val target = Target(
-            name = lookup.appName,
+            name = apk.appName,
             packageName = packageName,
-            apkPath = apk.apkPath,
-            icon = lookup.icon
+            apkPath = app.baseAPK.apkPath,
+            icon = apk.icon
         )
 
         val sortedTargets = TreeSet<StatedTarget>()
         sortedTargets.addAll(targets)
         sortedTargets.add(StatedTarget(target))
 
-        onTargetsUpdated(sortedTargets)
+      return Result.success(sortedTargets)
     }
 }

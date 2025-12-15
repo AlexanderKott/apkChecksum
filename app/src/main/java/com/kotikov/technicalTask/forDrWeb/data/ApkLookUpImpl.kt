@@ -3,8 +3,8 @@ package com.kotikov.technicalTask.forDrWeb.data
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import com.kotikov.technicalTask.forDrWeb.data.models.APKLookUpResult
 import com.kotikov.technicalTask.forDrWeb.data.models.APKsInfo
+import com.kotikov.technicalTask.forDrWeb.data.models.FoundAPKs
 import com.kotikov.technicalTask.forDrWeb.domain.repositories.ApkLookUp
 
 import java.io.File
@@ -12,7 +12,7 @@ import java.io.File
 class ApkLookUpImpl(context: Context) : ApkLookUp {
     private val packageManager = context.packageManager
 
-    override fun getApkInfo(packageName: String): APKLookUpResult {
+    override fun getApkInfo(packageName: String): Result<FoundAPKs> {
         return try {
             val appInfo = packageManager.getApplicationInfo(packageName, 0)
 
@@ -23,18 +23,18 @@ class ApkLookUpImpl(context: Context) : ApkLookUp {
             val baseApk = APKsInfo(baseApkName, baseApkPath)
 
             val splits = getSplitsInfo(appInfo)
-            APKLookUpResult.FoundAPKs(baseApk, splits)
-        } catch (_: PackageManager.NameNotFoundException) {
-            APKLookUpResult.Error
+            Result.success(FoundAPKs(baseApk, splits))
+        } catch (e: PackageManager.NameNotFoundException) {
+            Result.failure(e)
         }
     }
 
 
-    private fun getSplitsInfo(app: ApplicationInfo): List<APKsInfo>? {
-        if (app.splitSourceDirs == null) return null
+    private fun getSplitsInfo(app: ApplicationInfo): List<APKsInfo> {
+        if (app.splitSourceDirs == null) return listOf()
         val foundSplitApk = mutableListOf<APKsInfo>()
 
-        app.splitSourceDirs?.forEachIndexed { i, path ->
+        app.splitSourceDirs?.forEach { path ->
             val splitApk = File(path)
             foundSplitApk.add(
                 APKsInfo(

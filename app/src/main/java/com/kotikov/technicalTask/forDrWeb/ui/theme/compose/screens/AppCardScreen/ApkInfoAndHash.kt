@@ -28,9 +28,7 @@ internal fun ApkInfoAndHash(
 
 
     if (apkHashResponse is ApkDetails.Error) {
-        val context: Context = LocalContext.current
-        val errorText = context
-            .getString(apkHashResponse.stringResID)
+        val errorText = apkHashResponse.errorMessage
 
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -48,7 +46,7 @@ internal fun ApkInfoAndHash(
             onCopyClick = onCopyClick
         )
 
-        if (apkHashResponse.payload.apkInfo.splitApk == null) {
+        if (apkHashResponse.payload.apkInfo.splitApk.isEmpty()) {
             Text(
                 text = "Сплит APK не найдены \nдля этого приложения",
                 fontSize = 14.sp,

@@ -4,5 +4,5 @@ import com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen.FullAppInf
 
 interface GetAllInstalledAppsRepository {
     fun getFullAppList(): List<FullAppInfo>
-    fun appLookup(packageName: String): FullAppInfo
+    fun appLookup(packageName: String): Result<FullAppInfo>
 }

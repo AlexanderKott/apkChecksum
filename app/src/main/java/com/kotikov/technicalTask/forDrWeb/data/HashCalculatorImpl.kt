@@ -8,11 +8,6 @@ import java.io.IOException
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 
-class HashCalculationException(
-    val errorCode: Int,
-    cause: Throwable? = null
-) : IOException(cause)
-
 
 object HashCalculatorImpl : HashCalculator {
 
@@ -25,51 +20,33 @@ object HashCalculatorImpl : HashCalculator {
     private const val MASK_255 = 255
     private const val LINE_LENGTH = 1
 
-    const val ERROR_CODE_FILE_NOT_FOUND = 1
-    const val ERROR_CODE_ALGORITHM_NOT_FOUND = 2
-    const val ERROR_CODE_FNF_EXCEPTION = 3
-    const val ERROR_CODE_SECURITY_EXCEPTION = 4
-    const val ERROR_CODE_IO_EXCEPTION = 5
-    const val ERROR_CODE_OOM_EXCEPTION = 6
-    const val ERROR_CODE_UNKNOWN_EXCEPTION = 7
-
-
-    override fun getFileHashSHA_256(filePath: String): String {
-        val file = File(filePath)
-
-        if (!file.exists()) {
-            throw HashCalculationException(ERROR_CODE_FILE_NOT_FOUND)
-        }
-
+    override fun getFileHashSHA_256(filePath: String): Result<String> {
         val messageDigest: MessageDigest = try {
             MessageDigest.getInstance(ALGORITHM)
         } catch (e: NoSuchAlgorithmException) {
-            throw HashCalculationException(ERROR_CODE_ALGORITHM_NOT_FOUND, e)
+            return Result.failure(e)
         }
 
-        val buffer = ByteArray(BUFFER_SIZE_B)
+        return try {
+            val file = File(filePath)
+            val buffer = ByteArray(BUFFER_SIZE_B)
 
-        try {
             FileInputStream(file).use { fis ->
                 var numRead: Int
                 while (fis.read(buffer).also { numRead = it } != END_OF_FILE) {
                     messageDigest.update(buffer, OFFSET, numRead)
                 }
             }
-        } catch (e: FileNotFoundException) {
-            throw HashCalculationException(ERROR_CODE_FNF_EXCEPTION, e)
-        } catch (e: SecurityException) {
-            throw HashCalculationException(ERROR_CODE_SECURITY_EXCEPTION, e)
-        } catch (e: IOException) {
-            throw HashCalculationException(ERROR_CODE_IO_EXCEPTION, e)
-        } catch (e: OutOfMemoryError) {
-            throw HashCalculationException(ERROR_CODE_OOM_EXCEPTION, e)
-        } catch (e: Exception) {
-            throw HashCalculationException(ERROR_CODE_UNKNOWN_EXCEPTION, e)
-        }
 
-        val bytes = messageDigest.digest()
-        return bytesToHex(bytes)
+            val bytes = messageDigest.digest()
+            Result.success(bytesToHex(bytes))
+        } catch (e: FileNotFoundException) {
+            Result.failure(e)
+        } catch (e: SecurityException) {
+            Result.failure(e)
+        } catch (e: IOException) {
+            Result.failure(e)
+        }
     }
 
 

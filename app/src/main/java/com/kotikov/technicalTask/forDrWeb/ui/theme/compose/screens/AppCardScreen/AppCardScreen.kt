@@ -1,5 +1,6 @@
 package com.kotikov.technicalTask.forDrWeb.ui.theme.compose.screens.AppCardScreen
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,10 +20,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,6 +34,7 @@ import androidx.navigation.NavController
 import com.kotikov.technicalTask.forDrWeb.R
 import com.kotikov.technicalTask.forDrWeb.presentation.AppCardScreen.AppCardViewModel
 import com.kotikov.technicalTask.forDrWeb.presentation.AppCardScreen.AppInfoResult
+import com.kotikov.technicalTask.forDrWeb.presentation.AppCardScreen.UiEvent
 import com.kotikov.technicalTask.forDrWeb.ui.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,6 +73,19 @@ fun AppCardScreen(
 
         val appInfo by viewModel.appInfo.collectAsState()
         val appHash by viewModel.appHash.collectAsState()
+        val context = LocalContext.current
+
+        LaunchedEffect (Unit) {
+            viewModel.uiEvent.collect { event ->
+                when (event) {
+                    is UiEvent.ShowToast ->
+                        Toast.makeText(context, event.message,
+                            Toast.LENGTH_SHORT)
+                            .show()
+                }
+            }
+        }
+
 
         LazyColumn(
             modifier = Modifier
@@ -83,7 +100,9 @@ fun AppCardScreen(
             } else if (appInfo is AppInfoResult.Success) {
                 val payload = (appInfo as AppInfoResult.Success).payload
                 item {
-                    InfoCard(payload, appHash)
+                    InfoCard(payload, appHash) {
+                        viewModel.onLaunchAppClicked(payload.packageName)
+                    }
                 }
             }
         }

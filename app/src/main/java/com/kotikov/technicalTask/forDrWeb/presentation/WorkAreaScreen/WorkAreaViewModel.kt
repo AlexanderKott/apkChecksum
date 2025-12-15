@@ -2,6 +2,7 @@ package com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen
 
 import android.app.Application
 import android.content.Context
+
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
@@ -28,22 +29,21 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
-
+import com.kotikov.technicalTask.forDrWeb.R
+import com.kotikov.technicalTask.forDrWeb.ui.theme.compose.screens.AppCardScreen.saveReportToInternalStorage
 
 //диай сюда
 class WorkAreaViewModel(application: Application) : AndroidViewModel(application) {
-    companion object {
-        private const val REPORT_FILE_NAME = "snapshots_report.html"
-    }
 
 
     private val filterTrigger: MutableStateFlow<AppsFilter> = MutableStateFlow(AppsFilter.ALL)
     private val isLoading = MutableStateFlow(false)
+    private val hasAnyErrors = MutableStateFlow(false)
     private val _targets = MutableStateFlow<MutableList<StatedTarget>>(
         mutableListOf<StatedTarget>()
     )
     val targets: StateFlow<List<StatedTarget>> = _targets.asStateFlow()
-    private val allApps = MutableSharedFlow<Result<List<FullAppInfo>>>(replay = 1)
+    private val allApks = MutableSharedFlow<List<FullAppInfo>>(replay = 1)
 
 
     private val apksRepository = GetAllInstalledAppsRepositoryImpl(
@@ -63,24 +63,15 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
     private val shareFiles by lazy { FileSharer(application) }
 
 
-    val apksList = combine(allApps, filterTrigger, isLoading)
-    { allApps, filter, loading ->
+    val apksList = combine(allApks, filterTrigger, isLoading, hasAnyErrors)
+    { allApps, filter, loading, anyErrors ->
         when {
+            anyErrors -> UIStatus.Error(R.string.error_unknown)
             loading -> UIStatus.Loading
             filter == AppsFilter.MY_TARGETS -> UIStatus.Ready(listOf())
-            allApps.isSuccess -> {
-                val values = allApps.getOrNull()
-                when {
-                    values == null -> UIStatus.Error(0)
-                    values.isEmpty() -> UIStatus.EmptyList
-                    else -> UIStatus.Ready(values.filterApps(filter))
-                }
-            }
-
-            else -> UIStatus.Error(0)
+            allApps.isEmpty() -> UIStatus.EmptyList
+            else -> UIStatus.Ready(allApps.filterApps(filter))
         }
-
-
     }.distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,
@@ -95,16 +86,10 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
 
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
+            hasAnyErrors.value = false
             isLoading.value = true
-            val res = try {
-                val apps = apksRepository.getFullAppList()
-                Result.success(apps)
-            } catch (e: Exception) {
-                Result.failure(e)
-            } finally {
-                isLoading.value = false
-            }
-            allApps.emit(res)
+            allApks.emit(apksRepository.getFullAppList())
+            isLoading.value = false
         }
     }
 
@@ -139,16 +124,22 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
 
     fun markApkAsTarget(packageName: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            MarkApkAsTargetUseCase(apkLookupRepositoryImpl, apksRepository)
+            val result = MarkApkAsTargetUseCase(apkLookupRepositoryImpl, apksRepository)
                 .invoke(
                     packageName,
-                    _targets.value,
-                    { value ->
-                        viewModelScope.launch(Dispatchers.Main) {
-                            _targets.value.clear()
-                            _targets.value.addAll(value)
-                        }
+                    _targets.value
+                )
+
+            result.fold(
+                onSuccess = {
+                    viewModelScope.launch(Dispatchers.Main) {
+                        _targets.value.clear()
+                        _targets.value.addAll(it)
                     }
+                },
+                onFailure = {
+                    hasAnyErrors.value = true
+                },
                 )
         }
     }
@@ -171,23 +162,6 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
             shareFiles.shareFile(fileToShare)
         }
     }
-
-    private suspend fun saveReportToInternalStorage(
-        context: Context,
-        reportContent: String
-    ): File =
-        withContext(Dispatchers.IO) {
-            val cacheDir = context.cacheDir
-            val file = File(cacheDir, REPORT_FILE_NAME)
-
-            try {
-                file.writeText(reportContent, Charsets.UTF_8)
-                return@withContext file
-            } catch (e: IOException) {
-                e.printStackTrace()
-                throw e
-            }
-        }
 
 
     private fun List<FullAppInfo>.filterApps(filter: AppsFilter): List<FullAppInfo> {

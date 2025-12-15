@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.kotikov.technicalTask.forDrWeb.presentation.AppCardScreen.AppCardViewModel.Companion.PACKAGE_NAME_KEY
 import com.kotikov.technicalTask.forDrWeb.ui.theme.compose.screens.AppCardScreen.AppCardScreen
 import com.kotikov.technicalTask.forDrWeb.ui.theme.compose.screens.AuthorScreen
 import com.kotikov.technicalTask.forDrWeb.ui.theme.compose.screens.HashInfoScreen
@@ -45,7 +46,7 @@ fun NavGraph() {
         composable(
             route = Screen.AppCard.route,
             arguments = listOf(
-                navArgument("packageName") { type = NavType.StringType }
+                navArgument(PACKAGE_NAME_KEY) { type = NavType.StringType }
             )
         ) { backStackEntry ->
             AppCardScreen(navController)
@@ -57,7 +58,7 @@ fun NavGraph() {
         composable(
             Screen.HashInfo.route,
             arguments = listOf(
-                navArgument("packageName") { type = NavType.StringType }
+                navArgument(PACKAGE_NAME_KEY) { type = NavType.StringType }
             )
         ) {
             HashInfoScreen(navController)

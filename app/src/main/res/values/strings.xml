@@ -47,9 +47,7 @@
     <string name="error_algorithm_not_found">Критическая ошибка: алгоритм хеширования не поддерживается системой.</string>
     <string name="error_io_exception">Ошибка чтения файла: возможно, файл поврежден.</string>
     <string name="error_permission_denied">Отказано в доступе к файлу из-за системных ограничений.</string>
-    <string name="error_out_of_memory">Недостаточно памяти для обработки файла.</string>
-    <string name="error_unknown_hash_error">Произошла неизвестная ошибка при вычислении хеша.</string>
-    <string name="error_nameNotFoundException">Пакет не найден</string>
+    <string name="error_unknown">Произошла неизвестная ошибка</string>
 
     <string name="about_text"><![CDATA[
     <br/>

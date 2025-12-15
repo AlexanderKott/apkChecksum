@@ -1,6 +1,5 @@
 package com.kotikov.technicalTask.forDrWeb.domain
 
-import com.kotikov.technicalTask.forDrWeb.data.HashCalculationException
 import com.kotikov.technicalTask.forDrWeb.domain.repositories.HashCalculator
 import com.kotikov.technicalTask.forDrWeb.domain.repositories.SnapshotsStorage
 import com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen.CheckingVerdict
@@ -62,14 +61,20 @@ class RecordSnapshotUseCase(
         val resultSet = mutableListOf<StatedTarget>()
 
         for (i in targets.indices) {
-            val hash = try {
-                hashCalculator.getFileHashSHA_256(targets[i].target.apkPath)
-            } catch (e: HashCalculationException) {
-                e.printStackTrace()
-                null
-            }
+            val result = hashCalculator.getFileHashSHA_256(targets[i].target.apkPath)
 
-            var tempTarget = if (record == HashTakes.REFERENCE_RECORD) {
+            val hash = result.fold(
+                onSuccess = {
+                    it
+                },
+
+                onFailure = {
+                    null
+                }
+            )
+
+
+            val tempTarget = if (record == HashTakes.REFERENCE_RECORD) {
                 targets[i].target.copy(
                     referenceHashTimeStamp = System.currentTimeMillis(),
                     referenceHash = hash

@@ -1,9 +1,17 @@
 package com.kotikov.technicalTask.forDrWeb.ui.theme.compose.screens.AppCardScreen
 
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.IOException
+
+    private const val REPORT_FILE_NAME = "snapshots_report.html"
 
 fun copyToClipboard(context: Context, key: String, value: String) {
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -12,26 +20,47 @@ fun copyToClipboard(context: Context, key: String, value: String) {
     clipboardManager.setPrimaryClip(clip)
 }
 
-fun launchAppByPackageName(context: Context, packageName: String): Boolean {
-    return try {
-        val intent = context.packageManager.getLaunchIntentForPackage(packageName)
-        if (intent != null) {
-            context.startActivity(intent)
-            true
-        } else {
-            val altIntent = Intent(Intent.ACTION_VIEW).apply {
-                setPackage(packageName)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            if (altIntent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(altIntent)
-                true
-            } else {
-                false
-            }
+fun launchAppByPackageName(context: Context, packageName: String): Result<Boolean> {
+    try {
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)
+
+        val intentToLaunch = launchIntent ?: Intent(Intent.ACTION_VIEW).apply {
+            setPackage(packageName)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        false
+
+        if (intentToLaunch.resolveActivity(context.packageManager) != null) {
+            context.startActivity(intentToLaunch)
+            return Result.success(true)
+        } else {
+            return Result.success(false)
+        }
+
+    } catch (e: ActivityNotFoundException) {
+        Log.e("LaunchApp", "Activity not found for package: $packageName", e)
+        return Result.failure(e)
+
+    } catch (e: SecurityException) {
+        Log.e("LaunchApp", "Security exception launching package: $packageName", e)
+        return Result.failure(e)
     }
 }
+
+
+
+suspend fun saveReportToInternalStorage(
+    context: Context,
+    reportContent: String
+): File =
+    withContext(Dispatchers.IO) {
+        val cacheDir = context.cacheDir
+        val file = File(cacheDir, REPORT_FILE_NAME)
+
+        try {
+            file.writeText(reportContent, Charsets.UTF_8)
+            return@withContext file
+        } catch (e: IOException) {
+            e.printStackTrace()
+            throw e
+        }
+    }

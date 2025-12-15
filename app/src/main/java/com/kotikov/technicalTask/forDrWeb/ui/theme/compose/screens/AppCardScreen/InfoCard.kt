@@ -18,7 +18,8 @@ import com.kotikov.technicalTask.forDrWeb.ui.theme.AppTheme
 @Composable
 internal fun InfoCard(
     payload: FullAppInfo,
-    appHash: ApkDetails
+    appHash: ApkDetails,
+    onLaunchClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -37,9 +38,7 @@ internal fun InfoCard(
         }
 
         AppCommonData(payload, copyAction)
-        LaunchSection(payload.canBeLaunched, onLaunchClick = {
-            launchAppByPackageName(context, payload.packageName)
-        })
+        LaunchSection(payload.canBeLaunched, onLaunchClick = onLaunchClick)
         Spacer(Modifier.height(8.dp))
         ApkInfoAndHash(appHash, copyAction)
     }

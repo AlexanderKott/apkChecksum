@@ -32,10 +32,19 @@ class GetAllInstalledAppsRepositoryImpl(context: Context) : GetAllInstalledAppsR
         return installedAppsList.sortedBy { it.appName }
     }
 
-    override fun appLookup(packageName: String): FullAppInfo {
-        val appInfo = packageManager.getApplicationInfo(packageName, 0)
-        return getInfoAboutApp(appInfo, packageManager)
+    override fun appLookup(packageName: String): Result<FullAppInfo> {
+        return try {
+            val appInfo = packageManager.getApplicationInfo(packageName, 0)
+            val result = getInfoAboutApp(appInfo, packageManager)
+           Result.success(result)
+
+        } catch (e: PackageManager.NameNotFoundException) {
+            Log.e("AppRepo", "Lookup failed for package: $packageName", e)
+            Result.failure(e)
+        }
     }
+
+
 
 
     private fun getInfoAboutApp(
