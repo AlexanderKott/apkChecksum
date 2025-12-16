@@ -64,19 +64,13 @@ fun WorkAreaScreen(
 
     val context: Context = LocalContext.current
 
-
-    var firstLaunch by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        if (firstLaunch) {
-            viewModel.refresh()
-            firstLaunch = false
-        }
+            viewModel.init()
     }
 
     LaunchedEffect(selectedFilter) {
         viewModel.filter(selectedFilter)
     }
-
 
     Scaffold(
         topBar = {
