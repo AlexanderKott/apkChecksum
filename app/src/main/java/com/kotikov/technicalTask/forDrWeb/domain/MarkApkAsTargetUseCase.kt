@@ -13,24 +13,24 @@ class MarkApkAsTargetUseCase(
 
     operator fun invoke(
         packageName: String,
-        targets: MutableList<StatedTarget>,
+        targets:List<StatedTarget>,
     ) : Result<TreeSet<StatedTarget>> {
         val apkInfo = apkLookupRepository.getApkInfo(packageName)
         val appLookup = apksRepository.appLookup(packageName)
 
-        val app = apkInfo.getOrElse {
+        val apk = apkInfo.getOrElse {
             return Result.failure(it)
         }
 
-        val apk = appLookup.getOrElse {
+        val app = appLookup.getOrElse {
             return Result.failure(it)
         }
 
         val target = Target(
-            name = apk.appName,
+            name = app.appName,
             packageName = packageName,
-            apkPath = app.baseAPK.apkPath,
-            icon = apk.icon
+            apkPath = apk.baseAPK.apkPath,
+            icon = app.icon
         )
 
         val sortedTargets = TreeSet<StatedTarget>()
