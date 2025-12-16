@@ -74,11 +74,6 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
             initialValue = UIStatus.Loading
         )
 
-
-    init {
-        refresh()
-    }
-
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
             hasAnyErrors.value = false
@@ -87,7 +82,6 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
             isLoading.value = false
         }
     }
-
 
     fun filter(filter: AppsFilter) {
         viewModelScope.launch(Dispatchers.IO) {

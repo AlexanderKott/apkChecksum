@@ -19,3 +19,7 @@ data class APKsInfoWithHash(
     val hash: String,
     val apkInfo: FoundAPKs,
 )
+
+sealed class UiEvent {
+    data class ShowToast(val message: String) : UiEvent()
+}

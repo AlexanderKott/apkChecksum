@@ -16,12 +16,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-
-sealed class UiEvent {
-    data class ShowToast(val message: String) : UiEvent()
-}
-
-
 class AppCardViewModel(
     private val application: Application,
     savedStateHandle: SavedStateHandle,
@@ -53,11 +47,7 @@ class AppCardViewModel(
     val uiEvent = _uiEvent.asSharedFlow()
 
 
-    init {
-        fillInAppCard()
-    }
-
-    private fun fillInAppCard() {
+    fun fillInAppCard() {
         viewModelScope.launch(Dispatchers.IO) {
             val packageTempName = packageName.value
             if (packageTempName == null) {
@@ -75,8 +65,6 @@ class AppCardViewModel(
                     _appInfo.value = AppInfoResult.Error
                 }
             )
-
-
         }
     }
 

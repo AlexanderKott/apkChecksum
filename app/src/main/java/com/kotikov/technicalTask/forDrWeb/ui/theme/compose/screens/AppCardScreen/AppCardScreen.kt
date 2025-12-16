@@ -43,6 +43,10 @@ fun AppCardScreen(
     navController: NavController? = null,
     viewModel: AppCardViewModel = viewModel()
 ) {
+    LaunchedEffect(Unit) {
+        viewModel.fillInAppCard()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
