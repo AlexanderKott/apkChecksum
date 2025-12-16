@@ -1,7 +1,6 @@
 package com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen
 
 import android.app.Application
-import androidx.annotation.MainThread
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
@@ -77,7 +76,6 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
         )
 
 
-    @MainThread
     fun init(){
         if(initializeCalled) return
         initializeCalled = true
