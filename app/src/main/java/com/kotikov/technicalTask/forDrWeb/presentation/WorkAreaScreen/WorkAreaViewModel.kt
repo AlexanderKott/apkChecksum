@@ -1,6 +1,7 @@
 package com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen
 
 import android.app.Application
+import androidx.annotation.MainThread
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
@@ -57,6 +58,7 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
     private val sysInfo by lazy { GetSystemInfoImpl }
     private val shareFiles by lazy { FileSharer(application) }
 
+    private var initializeCalled = false
 
     val apksList = combine(allApks, filterTrigger, isLoading, hasAnyErrors)
     { allApps, filter, loading, anyErrors ->
@@ -75,7 +77,10 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
         )
 
 
-    init {
+    @MainThread
+    fun init(){
+        if(initializeCalled) return
+        initializeCalled = true
         refresh()
     }
 
@@ -87,7 +92,6 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
             isLoading.value = false
         }
     }
-
 
     fun filter(filter: AppsFilter) {
         viewModelScope.launch(Dispatchers.IO) {
