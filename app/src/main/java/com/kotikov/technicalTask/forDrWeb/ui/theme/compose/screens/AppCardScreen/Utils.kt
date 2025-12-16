@@ -51,16 +51,15 @@ fun launchAppByPackageName(context: Context, packageName: String): Result<Boolea
 suspend fun saveReportToInternalStorage(
     context: Context,
     reportContent: String
-): File =
-    withContext(Dispatchers.IO) {
-        val cacheDir = context.cacheDir
-        val file = File(cacheDir, REPORT_FILE_NAME)
+): Result<File> = withContext(Dispatchers.IO) {
+    val cacheDir = context.cacheDir
+    val file = File(cacheDir, REPORT_FILE_NAME)
 
-        try {
-            file.writeText(reportContent, Charsets.UTF_8)
-            return@withContext file
-        } catch (e: IOException) {
-            e.printStackTrace()
-            throw e
-        }
+    try {
+        file.writeText(reportContent, Charsets.UTF_8)
+        Result.success(file)
+    } catch (e: IOException) {
+        Log.e("SaveReport", "Failed to save report to internal storage", e)
+        Result.failure(e)
     }
+}

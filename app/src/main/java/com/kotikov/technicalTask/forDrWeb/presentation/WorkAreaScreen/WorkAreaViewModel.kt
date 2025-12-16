@@ -135,7 +135,7 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
                 onFailure = {
                     hasAnyErrors.value = true
                 },
-                )
+            )
         }
     }
 
@@ -150,11 +150,12 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
                 targetsList
             )
 
-            val fileToShare = saveReportToInternalStorage(
-                application,
-                reportContent
-            )
-            shareFiles.shareFile(fileToShare)
+            saveReportToInternalStorage(
+                context = application,
+                reportContent = reportContent
+            ).getOrNull()?.let { fileToShare ->
+                shareFiles.shareFile(fileToShare)
+            }
         }
     }
 
