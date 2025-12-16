@@ -23,8 +23,11 @@ class HashInfoViewModel(
     private val _appHash = MutableStateFlow<HashCard>(HashCard.Loading)
     val appHash: StateFlow<HashCard> = _appHash.asStateFlow()
 
+    init {
+        fillInHashCard()
+    }
 
-    fun fillInHashCard() {
+    private fun fillInHashCard() {
         if (target == null) {
             _appHash.value = HashCard.DoTakeSnapshot
             return

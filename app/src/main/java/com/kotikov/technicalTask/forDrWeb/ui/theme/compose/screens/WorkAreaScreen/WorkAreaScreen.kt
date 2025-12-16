@@ -59,14 +59,10 @@ fun WorkAreaScreen(
 
     var selectedFilter by rememberSaveable { mutableStateOf(AppsFilter.ALL) }
     var snapshotMode by rememberSaveable { mutableStateOf(false) }
-    val apksListState = rememberLazyListState()
-    val targetsListState = rememberLazyListState()
+    var apksListState = rememberLazyListState()
+    var targetsListState = rememberLazyListState()
 
     val context: Context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-            viewModel.init()
-    }
 
     LaunchedEffect(selectedFilter) {
         viewModel.filter(selectedFilter)
