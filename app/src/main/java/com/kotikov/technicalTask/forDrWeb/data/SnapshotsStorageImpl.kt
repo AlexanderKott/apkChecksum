@@ -1,5 +1,6 @@
 package com.kotikov.technicalTask.forDrWeb.data
 
+import com.kotikov.technicalTask.forDrWeb.data.models.TargetsResult
 import com.kotikov.technicalTask.forDrWeb.domain.repositories.SnapshotsStorage
 import com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen.StatedTarget
 
@@ -18,11 +19,18 @@ object SnapshotsStorageImpl : SnapshotsStorage {
 
     override fun clearSnapshots() = this.snapshots.clear()
 
-    override fun findByPackage(packageName: String): StatedTarget? {
-        if (snapshots.isEmpty()) return null
+    override fun findAppByPackage(packageName: String): TargetsResult {
+        if (snapshots.isEmpty()) return TargetsResult.NotFound
 
         val firstSnapshot = snapshots[0]
-        return firstSnapshot.find { it.target.packageName == packageName }
+        val target = firstSnapshot.find { it.target.packageName == packageName }
+        return if (target == null) {
+            TargetsResult.NotFound
+        } else {
+            TargetsResult.Found(target)
+        }
+
+
     }
 
 }

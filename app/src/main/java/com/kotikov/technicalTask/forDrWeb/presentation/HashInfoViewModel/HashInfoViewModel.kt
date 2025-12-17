@@ -1,34 +1,46 @@
 package com.kotikov.technicalTask.forDrWeb.presentation.HashInfoViewModel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.kotikov.technicalTask.forDrWeb.data.SnapshotsStorageImpl
+import com.kotikov.technicalTask.forDrWeb.data.models.TargetsResult
 import com.kotikov.technicalTask.forDrWeb.presentation.AppCardScreen.AppCardViewModel.Companion.PACKAGE_NAME_KEY
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.kotikov.technicalTask.forDrWeb.presentation.HashInfoViewModel.HashCard.Success
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
 
 class HashInfoViewModel(
-    application: Application,
     savedStateHandle: SavedStateHandle,
-) : AndroidViewModel(application) {
+) : ViewModel() {
 
-    private val packageName = savedStateHandle
+    private val packageNameFlow = savedStateHandle
         .getStateFlow<String?>(PACKAGE_NAME_KEY, null)
 
-    private val target = SnapshotsStorageImpl
-        .findByPackage(packageName.value ?: "-")
+    private val targetsRepository = SnapshotsStorageImpl
 
-    private val _appHash = MutableStateFlow<HashCard>(HashCard.Loading)
-    val appHash: StateFlow<HashCard> = _appHash.asStateFlow()
-
-    fun fillInHashCard() {
-        if (target == null) {
-            _appHash.value = HashCard.DoTakeSnapshot
-            return
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val appHash: StateFlow<HashCard> = packageNameFlow.flatMapLatest { packageName ->
+        flow {
+            if (packageName == null) {
+                emit(HashCard.Error)
+                return@flow
+            }
+            when (val target = targetsRepository.findAppByPackage(packageName)) {
+                is TargetsResult.Found -> emit(Success(target.target))
+                is TargetsResult.NotFound -> emit(HashCard.DoTakeSnapshot)
+            }
         }
-
-        _appHash.value = HashCard.Success(target)
-    }
+    }.flowOn(Dispatchers.IO)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = HashCard.Loading
+        )
 }

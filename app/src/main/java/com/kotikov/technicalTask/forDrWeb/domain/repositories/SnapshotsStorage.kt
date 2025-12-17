@@ -1,5 +1,6 @@
 package com.kotikov.technicalTask.forDrWeb.domain.repositories
 
+import com.kotikov.technicalTask.forDrWeb.data.models.TargetsResult
 import com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen.StatedTarget
 
 interface SnapshotsStorage {
@@ -7,5 +8,5 @@ interface SnapshotsStorage {
     fun addSnapshots(snapshots: MutableList<StatedTarget>)
     fun setFirstSnapshot(targets: MutableList<StatedTarget>)
     fun clearSnapshots()
-    fun findByPackage(packageName: String): StatedTarget?
+    fun findAppByPackage(packageName: String): TargetsResult
 }
