@@ -64,10 +64,6 @@ fun WorkAreaScreen(
 
     val context: Context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-            viewModel.init()
-    }
-
     LaunchedEffect(selectedFilter) {
         viewModel.filter(selectedFilter)
     }

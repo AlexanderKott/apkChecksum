@@ -6,15 +6,23 @@ import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
 import com.kotikov.technicalTask.forDrWeb.R
 import com.kotikov.technicalTask.forDrWeb.data.ApkLookUpImpl
+import com.kotikov.technicalTask.forDrWeb.data.AppChangeObserverRepository
 import com.kotikov.technicalTask.forDrWeb.data.GetAllInstalledAppsRepositoryImpl
 import com.kotikov.technicalTask.forDrWeb.data.GetSystemInfoImpl
 import com.kotikov.technicalTask.forDrWeb.data.HashCalculatorImpl
 import com.kotikov.technicalTask.forDrWeb.data.SnapshotsStorageImpl
+import com.kotikov.technicalTask.forDrWeb.data.models.AppChangeEvent
 import com.kotikov.technicalTask.forDrWeb.domain.MarkApkAsTargetUseCase
 import com.kotikov.technicalTask.forDrWeb.domain.RecordSnapshotUseCase
 import com.kotikov.technicalTask.forDrWeb.domain.reports.generateHtmlReport
 import com.kotikov.technicalTask.forDrWeb.presentation.FileSharer
+import com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen.UIStatus.EmptyList
+import com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen.UIStatus.Error
+import com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen.UIStatus.Loading
+import com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen.UIStatus.Ready
+import com.kotikov.technicalTask.forDrWeb.presentation.models.AppAction
 import com.kotikov.technicalTask.forDrWeb.presentation.models.AppsFilter
+import com.kotikov.technicalTask.forDrWeb.presentation.models.ItemsState
 import com.kotikov.technicalTask.forDrWeb.ui.theme.compose.screens.AppCardScreen.saveReportToInternalStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,22 +32,29 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
 
 //диай сюда
 class WorkAreaViewModel(application: Application) : AndroidViewModel(application) {
 
+    companion object {
+        private const val ERROR_TEXT = "error"
 
-    private val filterTrigger: MutableStateFlow<AppsFilter> = MutableStateFlow(AppsFilter.ALL)
-    private val isLoading = MutableStateFlow(false)
+    }
+
+    private val userFilter: MutableStateFlow<AppsFilter> = MutableStateFlow(AppsFilter.ALL)
     private val hasAnyErrors = MutableStateFlow(false)
     private val _targets = MutableStateFlow<MutableList<StatedTarget>>(
         mutableListOf<StatedTarget>()
     )
     val targets: StateFlow<List<StatedTarget>> = _targets.asStateFlow()
-    private val allApks = MutableSharedFlow<List<FullAppInfo>>(replay = 1)
-
 
     private val apksRepository = GetAllInstalledAppsRepositoryImpl(
         application
@@ -57,43 +72,104 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
     private val sysInfo by lazy { GetSystemInfoImpl }
     private val shareFiles by lazy { FileSharer(application) }
 
-    private var initializeCalled = false
+    private val manualTrigger = MutableSharedFlow<Unit>()
 
-    val apksList = combine(allApks, filterTrigger, isLoading, hasAnyErrors)
-    { allApps, filter, loading, anyErrors ->
-        when {
-            anyErrors -> UIStatus.Error(R.string.error_unknown)
-            loading -> UIStatus.Loading
-            filter == AppsFilter.MY_TARGETS -> UIStatus.Ready(listOf())
-            allApps.isEmpty() -> UIStatus.EmptyList
-            else -> UIStatus.Ready(allApps.filterApps(filter))
+    private val apkChangesTrigger = AppChangeObserverRepository(application.applicationContext)
+        .appChanges
+        .flowOn(Dispatchers.IO)
+
+
+    private val statedItems = merge(
+        manualTrigger.map { AppAction.RefreshAll },
+        apkChangesTrigger.map { changes -> AppAction.Update(changes) })
+        .onStart { emit(AppAction.RefreshAll) }
+        .scan<AppAction, ItemsState>(ItemsState.Loading) { memState, element ->
+            when (element) {
+                is AppAction.RefreshAll -> ItemsState.Success(
+                    apksRepository
+                        .getFullAppList()
+                )
+
+                is AppAction.Update -> {
+                    val packgName = element.change.packageName
+                    val oldList = (memState as? ItemsState.Success)?.appsList
+                        ?: return@scan memState
+
+                    when (element.change) {
+                        is AppChangeEvent.Added -> {
+                            apksRepository.appLookup(packgName).fold(
+                                onSuccess = { newApp ->
+                                    ItemsState.Success(oldList + newApp)
+                                },
+                                onFailure = { e ->
+                                    ItemsState.Error(e.message ?: ERROR_TEXT)
+                                }
+                            )
+                        }
+
+                        is AppChangeEvent.Changed -> {
+                            apksRepository.appLookup(packgName).fold(
+                                onSuccess = { updatedApp ->
+                                    ItemsState.Success(
+                                        oldList
+                                            .map {
+                                                if (it.packageName == updatedApp.packageName)
+                                                    updatedApp
+                                                else
+                                                    it
+                                            })
+                                },
+                                onFailure = { e ->
+                                    ItemsState.Error(e.message ?: ERROR_TEXT)
+                                }
+                            )
+                        }
+
+                        is AppChangeEvent.Removed -> {
+                            ItemsState.Success(
+                                oldList
+                                    .filter { it.packageName != packgName }
+                            )
+                        }
+
+                    }
+                }
+            }
+
+        }.flowOn(Dispatchers.IO)
+
+
+    val apksList = combine(statedItems, userFilter)
+    { statedItems, filter ->
+        when (statedItems) {
+            is ItemsState.Error -> Error(R.string.error_unknown)
+            is ItemsState.Loading -> Loading
+            is ItemsState.Success -> {
+                if (statedItems.appsList.isEmpty()) {
+                    EmptyList
+                } else {
+                    Ready(statedItems.appsList.filterApps(filter))
+                }
+            }
         }
-    }.distinctUntilChanged()
+    }.flowOn(Dispatchers.IO)
+        .distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = UIStatus.Loading
+            initialValue = Loading
         )
 
 
-    fun init(){
-        if(initializeCalled) return
-        initializeCalled = true
-        refresh()
-    }
-
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
-            hasAnyErrors.value = false
-            isLoading.value = true
-            allApks.emit(apksRepository.getFullAppList())
-            isLoading.value = false
+            manualTrigger.emit(Unit)
         }
     }
 
     fun filter(filter: AppsFilter) {
         viewModelScope.launch(Dispatchers.IO) {
-            filterTrigger.emit(filter)
+            userFilter.emit(filter)
         }
     }
 
@@ -169,7 +245,7 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
             AppsFilter.SYSTEM_ONLY -> filter { it.isSystemApp && !it.isTechnicalName }
             AppsFilter.SERVICE -> filter { it.isTechnicalName }
             AppsFilter.DEBUG -> filter { it.isDebuggable }
-            AppsFilter.MY_TARGETS -> filter { false }
+            AppsFilter.MY_TARGETS -> emptyList()
         }
     }
 }
