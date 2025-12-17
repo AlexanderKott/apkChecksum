@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
-import com.kotikov.technicalTask.forDrWeb.R
 import com.kotikov.technicalTask.forDrWeb.data.ApkLookUpImpl
 import com.kotikov.technicalTask.forDrWeb.data.AppChangeObserverRepository
 import com.kotikov.technicalTask.forDrWeb.data.GetAllInstalledAppsRepositoryImpl
@@ -44,16 +43,8 @@ import kotlinx.coroutines.launch
 //диай сюда
 class WorkAreaViewModel(application: Application) : AndroidViewModel(application) {
 
-    companion object {
-        private const val ERROR_TEXT = "error"
-
-    }
-
     private val userFilter: MutableStateFlow<AppsFilter> = MutableStateFlow(AppsFilter.ALL)
-    private val hasAnyErrors = MutableStateFlow(false)
-    private val _targets = MutableStateFlow<MutableList<StatedTarget>>(
-        mutableListOf<StatedTarget>()
-    )
+    private val _targets = MutableStateFlow<List<StatedTarget>>(mutableListOf())
     val targets: StateFlow<List<StatedTarget>> = _targets.asStateFlow()
 
     private val apksRepository = GetAllInstalledAppsRepositoryImpl(
@@ -85,10 +76,16 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
         .onStart { emit(AppAction.RefreshAll) }
         .scan<AppAction, ItemsState>(ItemsState.Loading) { memState, element ->
             when (element) {
-                is AppAction.RefreshAll -> ItemsState.Success(
+                is AppAction.RefreshAll ->
                     apksRepository
-                        .getFullAppList()
-                )
+                        .getFullAppList().fold(
+                            onSuccess = { list ->
+                                ItemsState.Success(list)
+                            },
+                            onFailure = { e ->
+                                ItemsState.Error(e.toString())
+                            }
+                        )
 
                 is AppAction.Update -> {
                     val packgName = element.change.packageName
@@ -102,7 +99,7 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
                                     ItemsState.Success(oldList + newApp)
                                 },
                                 onFailure = { e ->
-                                    ItemsState.Error(e.message ?: ERROR_TEXT)
+                                    ItemsState.Error(e.toString())
                                 }
                             )
                         }
@@ -120,7 +117,7 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
                                             })
                                 },
                                 onFailure = { e ->
-                                    ItemsState.Error(e.message ?: ERROR_TEXT)
+                                    ItemsState.Error(e.toString())
                                 }
                             )
                         }
@@ -142,7 +139,7 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
     val apksList = combine(statedItems, userFilter)
     { statedItems, filter ->
         when (statedItems) {
-            is ItemsState.Error -> Error(R.string.error_unknown)
+            is ItemsState.Error -> Error(statedItems.message)
             is ItemsState.Loading -> Loading
             is ItemsState.Success -> {
                 if (statedItems.appsList.isEmpty()) {
@@ -182,16 +179,14 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
             ).invoke(
                 targetApks = _targets.value,
                 onTargetsUpdated = { value ->
-                    viewModelScope.launch(Dispatchers.Main) {
                         _targets.value = value
-                    }
                 }
             )
         }
     }
 
     fun deleteTargets() {
-        _targets.value = ArrayList<StatedTarget>()
+        _targets.value = ArrayList()
         snapshots.clearSnapshots()
     }
 
@@ -203,17 +198,9 @@ class WorkAreaViewModel(application: Application) : AndroidViewModel(application
                     _targets.value
                 )
 
-            result.fold(
-                onSuccess = {
-                    viewModelScope.launch(Dispatchers.Main) {
-                        _targets.value.clear()
-                        _targets.value.addAll(it)
-                    }
-                },
-                onFailure = {
-                    hasAnyErrors.value = true
-                },
-            )
+            result.onSuccess { targets ->
+                _targets.value = targets.toList()
+            }
         }
     }
 

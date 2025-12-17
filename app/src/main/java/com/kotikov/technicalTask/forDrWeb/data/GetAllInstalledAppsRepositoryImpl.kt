@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.TransactionTooLargeException
 import android.util.Log
 import androidx.core.graphics.drawable.toBitmap
 import com.kotikov.technicalTask.forDrWeb.domain.repositories.GetAllInstalledAppsRepository
@@ -17,19 +18,32 @@ class GetAllInstalledAppsRepositoryImpl(context: Context) : GetAllInstalledAppsR
     private val packageManager = context.packageManager
 
     @SuppressLint("QueryPermissionsNeeded")
-    override fun getFullAppList(): List<FullAppInfo> {
+    override fun getFullAppList(): Result<List<FullAppInfo>> {
+        return try {
+            val applications = packageManager.getInstalledApplications(
+                PackageManager.GET_META_DATA
+            )
 
-        val applications = packageManager.getInstalledApplications(
-            PackageManager.GET_META_DATA
-        )
-        val installedAppsList = mutableListOf<FullAppInfo>()
+            val installedAppsList = mutableListOf<FullAppInfo>()
 
-        for (app in applications) {
-            val info = getInfoAboutApp(app, packageManager)
-            installedAppsList.add(info)
+            for (app in applications) {
+                val info = getInfoAboutApp(app, packageManager)
+                installedAppsList.add(info)
+            }
+
+            Result.success(installedAppsList.sortedBy { it.appName })
+
+        } catch (e: TransactionTooLargeException) {
+            Result.failure(e)
+        } catch (e: android.os.RemoteException) {
+            Result.failure(e)
+        } catch (e: PackageManager.NameNotFoundException) {
+            Result.failure(e)
+        } catch (e: android.content.res.Resources.NotFoundException) {
+            Result.failure(e)
+        } catch (e: IllegalStateException) {
+            Result.failure(e)
         }
-
-        return installedAppsList.sortedBy { it.appName }
     }
 
     override fun appLookup(packageName: String): Result<FullAppInfo> {
@@ -42,8 +56,6 @@ class GetAllInstalledAppsRepositoryImpl(context: Context) : GetAllInstalledAppsR
             Result.failure(e)
         }
     }
-
-
 
 
     private fun getInfoAboutApp(
@@ -87,7 +99,10 @@ class GetAllInstalledAppsRepositoryImpl(context: Context) : GetAllInstalledAppsR
         var versionCode: Long? = 0L
         try {
             val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                packageManager?.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0L))
+                packageManager?.getPackageInfo(
+                    packageName, PackageManager
+                        .PackageInfoFlags.of(0L)
+                )
             } else {
                 @Suppress("DEPRECATION")
                 packageManager?.getPackageInfo(packageName, 0)

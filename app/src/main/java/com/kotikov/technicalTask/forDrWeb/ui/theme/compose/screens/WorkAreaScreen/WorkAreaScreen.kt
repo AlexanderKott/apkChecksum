@@ -120,8 +120,8 @@ fun WorkAreaScreen(
             ) {
 
                 if (apks is UIStatus.Error) {
-                    val messageID = (apks as UIStatus.Error).messageResID
-                    ErrorText(stringResource(messageID))
+                    val message = (apks as UIStatus.Error).message
+                    ErrorText(message)
 
                 } else {
                     if (selectedFilter == AppsFilter.MY_TARGETS) {

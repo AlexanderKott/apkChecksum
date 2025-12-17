@@ -144,14 +144,18 @@ class AppCardViewModel(
         }
     }
 
-    private fun calcApkHash(packageName: String): ApkDetails = runCatching {
-        val appData = apkLookUpRepository.getApkInfo(packageName).getOrThrow()
-        val hashStr = hashCalcRepository
-            .getFileHashSHA_256(appData.baseAPK.apkPath).getOrThrow()
+    private fun calcApkHash(packageName: String): ApkDetails {
+        val appData = apkLookUpRepository.getApkInfo(packageName).getOrElse {
+            return ApkDetails.Error(it.message ?: DEFAULT_ERROR)
+        }
 
-        APKsInfoWithHash(hashStr, appData)
-    }.fold(
-        onSuccess = { ApkDetails.Success(it) },
-        onFailure = { ApkDetails.Error(it.message ?: DEFAULT_ERROR) }
-    )
+        val hashStr = hashCalcRepository.getFileHashSHA_256(
+            appData
+                .baseAPK
+                .apkPath
+        ).getOrElse {
+            return ApkDetails.Error(it.message ?: DEFAULT_ERROR)
+        }
+        return ApkDetails.Success(APKsInfoWithHash(hashStr, appData))
+    }
 }

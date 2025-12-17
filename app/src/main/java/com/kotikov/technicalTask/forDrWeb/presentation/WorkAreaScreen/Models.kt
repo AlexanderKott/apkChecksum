@@ -18,5 +18,5 @@ sealed class UIStatus {
     object Loading : UIStatus()
     object EmptyList : UIStatus()
     data class Ready(val payload: List<FullAppInfo>) : UIStatus()
-    data class Error(val messageResID: Int) : UIStatus()
+    data class Error(val message: String) : UIStatus()
 }
