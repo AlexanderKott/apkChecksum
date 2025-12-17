@@ -17,7 +17,7 @@ import com.kotikov.technicalTask.forDrWeb.presentation.AppCardScreen.ApkDetails
 @Composable
 internal fun ApkInfoAndHash(
     apkHashResponse: ApkDetails,
-    onCopyClick: (String, String) -> Unit = { key, value -> }
+    onCopyClick: (String, String) -> Unit = { _, _ -> }
 ) {
     if (apkHashResponse is ApkDetails.Loading) {
         LoadingIndicator()
@@ -39,12 +39,12 @@ internal fun ApkInfoAndHash(
     if (apkHashResponse is ApkDetails.Success) {
         ApkItemCard(
             title = "Base APK",
-            apkInfo = apkHashResponse.payload.apkInfo.baseAPK,
-            hash = apkHashResponse.payload.hash,
+            apkInfo = apkHashResponse.data.apkInfo.baseAPK,
+            hash = apkHashResponse.data.hash,
             onCopyClick = onCopyClick
         )
 
-        if (apkHashResponse.payload.apkInfo.splitApk.isEmpty()) {
+        if (apkHashResponse.data.apkInfo.splitApk.isEmpty()) {
             Text(
                 text = "Сплит APK не найдены \nдля этого приложения",
                 fontSize = 14.sp,
@@ -58,7 +58,7 @@ internal fun ApkInfoAndHash(
             return
         }
 
-        apkHashResponse.payload.apkInfo.splitApk.let { splitApks ->
+        apkHashResponse.data.apkInfo.splitApk.let { splitApks ->
             Text(
                 text = "Split APKs:",
                 modifier = Modifier.padding(

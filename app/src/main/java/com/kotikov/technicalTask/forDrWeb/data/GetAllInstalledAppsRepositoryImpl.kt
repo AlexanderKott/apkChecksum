@@ -37,7 +37,6 @@ class GetAllInstalledAppsRepositoryImpl(context: Context) : GetAllInstalledAppsR
             val appInfo = packageManager.getApplicationInfo(packageName, 0)
             val result = getInfoAboutApp(appInfo, packageManager)
            Result.success(result)
-
         } catch (e: PackageManager.NameNotFoundException) {
             Log.e("AppRepo", "Lookup failed for package: $packageName", e)
             Result.failure(e)

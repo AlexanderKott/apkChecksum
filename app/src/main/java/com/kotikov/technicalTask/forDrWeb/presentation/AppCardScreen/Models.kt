@@ -5,13 +5,14 @@ import com.kotikov.technicalTask.forDrWeb.presentation.WorkAreaScreen.FullAppInf
 
 sealed class AppInfoResult {
     object Loading : AppInfoResult()
-    data class Success(val payload: FullAppInfo) : AppInfoResult()
+    data class DataReady(val data: FullAppInfo) : AppInfoResult()
     object Error : AppInfoResult()
+    object AppHasBeenDeleted : AppInfoResult()
 }
 
 sealed class ApkDetails {
     object Loading : ApkDetails()
-    data class Success(val payload: APKsInfoWithHash) : ApkDetails()
+    data class Success(val data: APKsInfoWithHash) : ApkDetails()
     data class Error(val errorMessage: String) : ApkDetails()
 }
 
@@ -22,4 +23,9 @@ data class APKsInfoWithHash(
 
 sealed class UiEvent {
     data class ShowToast(val message: String) : UiEvent()
+}
+
+
+enum class CurrentAppUpdate {
+    INIT, DELETED, CHANGED
 }

@@ -43,10 +43,6 @@ fun AppCardScreen(
     navController: NavController? = null,
     viewModel: AppCardViewModel = viewModel()
 ) {
-    LaunchedEffect(Unit) {
-        viewModel.fillInAppCard()
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -97,15 +93,25 @@ fun AppCardScreen(
                 .padding(paddingValues),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (appInfo is AppInfoResult.Error) {
-                item { ErrorText() }
-            } else if (appInfo is AppInfoResult.Loading) {
-                item { LoadingIndicator() }
-            } else if (appInfo is AppInfoResult.Success) {
-                val payload = (appInfo as AppInfoResult.Success).payload
-                item {
-                    InfoCard(payload, appHash) {
-                        viewModel.onLaunchAppClicked(payload.packageName)
+            when (appInfo) {
+                is AppInfoResult.Error -> {
+                    item { ErrorText() }
+                }
+
+                is AppInfoResult.AppHasBeenDeleted -> {
+                    item { ErrorText("Приложение было удалено с устройства") }
+                }
+
+                is AppInfoResult.Loading -> {
+                    item { LoadingIndicator() }
+                }
+
+                is AppInfoResult.DataReady -> {
+                    val payload = (appInfo as AppInfoResult.DataReady).data
+                    item {
+                        InfoCard(payload, appHash) {
+                            viewModel.onLaunchAppClicked(payload.packageName)
+                        }
                     }
                 }
             }
@@ -132,11 +138,17 @@ fun LoadingIndicator() {
 
 @Composable
 fun ErrorText(errorMessage: String? = null) {
-    Text(
-        text = errorMessage ?: "Произошла ошибка при получении данных",
-        style = MaterialTheme.typography.titleLarge,
-        color = AppTheme.primaryColor
-    )
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = errorMessage ?: "Произошла ошибка при получении данных",
+            style = MaterialTheme.typography.titleLarge,
+            color = AppTheme.primaryColor,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
 }
 
 @Composable

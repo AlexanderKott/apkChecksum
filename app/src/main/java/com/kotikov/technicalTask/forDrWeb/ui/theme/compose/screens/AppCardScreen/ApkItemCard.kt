@@ -21,7 +21,7 @@ fun ApkItemCard(
     title: String,
     apkInfo: APKsInfo,
     hash: String = "в этой версии недоступно",
-    onCopyClick: (String, String) -> Unit = { key, value -> }
+    onCopyClick: (String, String) -> Unit = { _, _ -> }
 ) {
     Card(
         modifier = modifier
